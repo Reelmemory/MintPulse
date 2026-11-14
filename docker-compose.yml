@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mintpulse-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mintpulse}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mintpulse_password}
+      POSTGRES_DB: ${POSTGRES_DB:-mintpulse}
+    ports:
+      - "5432:5432"
+    volumes:
+      - mintpulse_pgdata:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mintpulse} -d ${POSTGRES_DB:-mintpulse}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mintpulse-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mintpulse-bot
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-mintpulse}:${POSTGRES_PASSWORD:-mintpulse_password}@postgres:5432/${POSTGRES_DB:-mintpulse}
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:-}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
+      OPENSEA_API_KEY: ${OPENSEA_API_KEY:-}
+      DEFAULT_REMINDER_INTERVALS: ${DEFAULT_REMINDER_INTERVALS:-1440,60,15}
+      OVERDUE_GRACE_MINUTES: ${OVERDUE_GRACE_MINUTES:-30}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "3000:3000"
+
+volumes:
+  mintpulse_pgdata:

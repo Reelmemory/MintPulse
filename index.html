@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <script>
+      (function () {
+        var WALLET_PROPS = {
+          isZerion: true,
+          ethereum: true,
+          isMetaMask: true,
+          isRabby: true,
+          isBraveWallet: true,
+          isPhantom: true,
+          isCoinbaseWallet: true,
+          isOkxWallet: true,
+          isTrust: true,
+          providers: true
+        };
+
+        var origDefineProperty = Object.defineProperty;
+        var origDefineProperties = Object.defineProperties;
+        var origReflectDefineProperty =
+          typeof Reflect !== 'undefined' && Reflect.defineProperty
+            ? Reflect.defineProperty
+            : null;
+
+        function patchDescriptor(obj, prop, descriptor) {
+          if (!descriptor || typeof descriptor !== 'object') return descriptor;
+          if (obj === window || WALLET_PROPS[prop]) {
+            var copy = {};
+            for (var k in descriptor) {
+              if (Object.prototype.hasOwnProperty.call(descriptor, k)) {
+                copy[k] = descriptor[k];
+              }
+            }
+            copy.configurable = true;
+            return copy;
+          }
+          return descriptor;
+        }
+
+        Object.defineProperty = function (obj, prop, descriptor) {
+          try {
+            return origDefineProperty.call(
+              Object,
+              obj,
+              prop,
+              patchDescriptor(obj, prop, descriptor)
+            );
+          } catch (err) {
+            try {
+              return origDefineProperty.call(Object, obj, prop, descriptor);
+            } catch (_innerErr) {
+              return obj;
+            }
+          }
+        };
+
+        Object.defineProperties = function (obj, props) {
+          try {
+            if (props && typeof props === 'object') {
+              var patched = {};
+              for (var key in props) {
+                if (Object.prototype.hasOwnProperty.call(props, key)) {
+                  patched[key] = patchDescriptor(obj, key, props[key]);
+                }
+              }
+              return origDefineProperties.call(Object, obj, patched);
+            }
+            return origDefineProperties.call(Object, obj, props);
+          } catch (_err) {
+            return obj;
+          }
+        };
+
+        if (origReflectDefineProperty) {
+          Reflect.defineProperty = function (target, propertyKey, attributes) {
+            try {
+              return origReflectDefineProperty.call(
+                Reflect,
+                target,
+                propertyKey,
+                patchDescriptor(target, propertyKey, attributes)
+              );
+            } catch (_err) {
+              return true;
+            }
+          };
+        }
+
+        function isExtensionNoise(msg, source, stack) {
+          var m = String(msg || '');
+          var s = String(source || '');
+          var st = String(stack || '');
+          return (
+            m.indexOf('isZerion') !== -1 ||
+            m.indexOf('Cannot redefine property') !== -1 ||
+            s.indexOf('chrome-extension://') !== -1 ||
+            s.indexOf('moz-extension://') !== -1 ||
+            st.indexOf('chrome-extension://') !== -1 ||
+            st.indexOf('moz-extension://') !== -1
+          );
+        }
+
+        window.addEventListener(
+          'error',
+          function (event) {
+            var errStack = event && event.error && event.error.stack ? event.error.stack : '';
+            if (isExtensionNoise(event && event.message, event && event.filename, errStack)) {
+              event.stopImmediatePropagation();
+              event.stopPropagation();
+              event.preventDefault();
+              return false;
+            }
+          },
+          true
+        );
+
+        window.addEventListener(
+          'unhandledrejection',
+          function (event) {
+            var reason = event && event.reason;
+            var msg = reason && reason.message ? reason.message : String(reason || '');
+            var stack = reason && reason.stack ? reason.stack : '';
+            if (isExtensionNoise(msg, '', stack)) {
+              event.stopImmediatePropagation();
+              event.stopPropagation();
+              event.preventDefault();
+              return false;
+            }
+          },
+          true
+        );
+
+        var prevOnError = window.onerror;
+        window.onerror = function (message, source, lineno, colno, error) {
+          var stack = error && error.stack ? error.stack : '';
+          if (isExtensionNoise(message, source, stack)) {
+            return true;
+          }
+          if (typeof prevOnError === 'function') {
+            return prevOnError.apply(this, arguments);
+          }
+          return false;
+        };
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MintPulse — Open-Source Discord NFT Mint Reminder Bot</title>
+    <meta name="description" content="Production-ready open-source Discord bot and modular EVM discovery engine for scheduling verified NFT mint reminders with PostgreSQL persistence and SSRF protection." />
+    <meta property="og:title" content="MintPulse — Open-Source Discord NFT Mint Reminder Bot" />
+    <meta property="og:description" content="Production-ready open-source Discord bot and modular EVM discovery engine for scheduling verified NFT mint reminders with PostgreSQL persistence and SSRF protection." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  </head>
+  <body class="bg-[#0B0F19] text-slate-100 antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

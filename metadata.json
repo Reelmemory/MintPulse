@@ -1,0 +1,6 @@
+{
+  "name": "MintPulse — Open-Source Discord NFT Mint Reminder Bot",
+  "description": "Production-ready open-source Discord bot and modular EVM discovery engine for scheduling verified NFT mint reminders with PostgreSQL persistence and SSRF protection.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
