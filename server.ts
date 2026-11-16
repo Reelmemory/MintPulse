@@ -40,35 +40,8 @@ async function startServer() {
   // 1. Initialize Storage Repository
   const storage = await createStorageRepository();
 
-  // Ensure two isolated default Discord guilds exist for immediate multi-server simulation
-  const existingGuilds = await storage.getAllGuildSettings();
-  if (existingGuilds.length === 0) {
-    const g1 = await storage.getGuildSettings('109283746510293847', 'ETH Alpha Collective');
-    await storage.saveGuildSettings({
-      ...g1,
-      announcementChannelId: '998877665544332211',
-      announcementChannelName: 'nft-mint-alerts',
-      pingRoleId: '776655443322110099',
-      pingRoleName: 'Mint-Ping',
-      timezone: 'America/New_York',
-      enabledCategories: ['free', 'allowlist', 'public'],
-      reminderIntervalsMinutes: [1440, 60, 15],
-      channelStatus: 'active',
-    });
-
-    const g2 = await storage.getGuildSettings('204958673829104958', 'Tokyo Onchain Builders');
-    await storage.saveGuildSettings({
-      ...g2,
-      announcementChannelId: '887766554433221100',
-      announcementChannelName: 'drop-schedule',
-      pingRoleId: null,
-      pingRoleName: null,
-      timezone: 'Asia/Tokyo',
-      enabledCategories: ['free', 'public'],
-      reminderIntervalsMinutes: [60, 15],
-      channelStatus: 'active',
-    });
-  }
+  // Production starts with an empty guild list; real Discord guilds are created
+  // only when users run /setup or another server-scoped command.
 
   // 2. Initialize Reminder Engine & Command Processor
   const reminderEngine = new ReminderEngine({ storage });
